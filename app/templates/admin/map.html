@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Map View – CivicPulse Admin{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  body { overflow: hidden; }
+  #admin-map { height: calc(100vh - 140px); border-radius: 0; border: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding:1rem 0;">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="h4 mb-0"><i class="bi bi-map me-2"></i>Complaint Map</h1>
+    </div>
+    <div class="d-flex gap-2">
+      <!-- Legend -->
+      <div class="d-flex gap-3 align-items-center me-3 small text-white">
+        <span><span style="display:inline-block;width:12px;height:12px;background:#e74c3c;border-radius:50%;border:2px solid #fff;"></span> Pending</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;border-radius:50%;border:2px solid #fff;"></span> In Progress</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:50%;border:2px solid #fff;"></span> Resolved</span>
+      </div>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="map-fallback mx-3 mt-2" id="map-fallback">
+  Map tiles unavailable. Showing {{ complaints | length }} complaint location(s) below.
+</div>
+
+<div id="admin-map"></div>
+
+{% if no_coords_complaints %}
+<div class="container mt-3">
+  <div class="card">
+    <div class="card-header small">
+      <i class="bi bi-geo-alt-fill me-1 text-muted"></i>
+      {{ no_coords_complaints | length }} complaint(s) without location coordinates
+    </div>
+    <div class="card-body p-2">
+      <div class="row g-2">
+        {% for c in no_coords_complaints %}
+        <div class="col-md-4 small">
+          <a href="{{ url_for('admin.complaint_detail', complaint_id=c.id) }}" class="text-decoration-none">
+            <strong>#{{ c.id }}</strong> {{ c.title | truncate(40) }}
+          </a>
+          <span class="text-muted"> — {{ c.location_text | truncate(30) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+  var complaints = {{ complaints_json | safe }};
+  initAdminMap(complaints, {{ config.MAP_DEFAULT_LAT }}, {{ config.MAP_DEFAULT_LNG }});
+</script>
+{% endblock %}

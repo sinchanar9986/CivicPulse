@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Complaint #{{ complaint.id }} – CivicPulse Admin{% endblock %}
+
+{% block content %}
+{% set sc = complaint.status | lower | replace(' ', '') %}
+{% set pc = complaint.priority | lower %}
+
+<div class="page-header">
+  <div class="container d-flex justify-content-between align-items-start">
+    <div>
+      <h1><i class="bi bi-file-text me-2"></i>Complaint #{{ complaint.id }}</h1>
+      <p>{{ complaint.title }}</p>
+    </div>
+    <div class="d-flex gap-2 mt-1">
+      <a href="{{ url_for('admin.complaints_list') }}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+      </a>
+      <a href="{{ url_for('admin.archive_complaint', complaint_id=complaint.id) }}"
+         class="btn btn-outline-light btn-sm"
+         onclick="return confirm('Archive this complaint?')">
+        <i class="bi bi-archive me-1"></i>Archive
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- Left: complaint details -->
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-header">Complaint Details</div>
+        <div class="card-body p-4">
+          <div class="row g-3 mb-3">
+            <div class="col-sm-4">
+              <div class="text-muted small fw-semibold mb-1">CATEGORY</div>
+              <span class="badge-category">{{ complaint.category }}</span>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small fw-semibold mb-1">PRIORITY</div>
+              <span class="badge rounded-pill badge-priority-{{ pc }}">{{ complaint.priority }}</span>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small fw-semibold mb-1">STATUS</div>
+              <span class="badge rounded-pill badge-status-{{ sc }}">{{ complaint.status }}</span>
+            </div>
+          </div>
+
+          <h6 class="fw-semibold">Description</h6>
+          <p class="text-muted">{{ complaint.description }}</p>
+
+          <div class="row g-2 small text-muted">
+            <div class="col-sm-6">
+              <i class="bi bi-geo-alt text-primary me-1"></i>
+              <strong>Location:</strong> {{ complaint.location_text }}
+            </div>
+            {% if complaint.latitude and complaint.longitude %}
+            <div class="col-sm-6">
+              <i class="bi bi-pin-map text-primary me-1"></i>
+              <strong>Coords:</strong> {{ complaint.latitude }}, {{ complaint.longitude }}
+            </div>
+            {% endif %}
+            <div class="col-sm-6">
+              <i class="bi bi-calendar text-primary me-1"></i>
+              <strong>Submitted:</strong> {{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+            <div class="col-sm-6">
+              <i class="bi bi-clock-history text-primary me-1"></i>
+              <strong>Updated:</strong> {{ complaint.updated_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+          </div>
+
+          {% if complaint.is_duplicate %}
+          <div class="alert alert-warning mt-3 mb-0 small">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Flagged as duplicate of complaint
+            <a href="{{ url_for('admin.complaint_detail', complaint_id=complaint.duplicate_of_id) }}">#{{ complaint.duplicate_of_id }}</a>
+            (similarity: {{ "%.0f"|format(complaint.similarity_score * 100) }}%).
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Image -->
+      {% if complaint.image_filename %}
+      <div class="card mb-4">
+        <div class="card-header">Attached Photo</div>
+        <div class="card-body p-3 text-center">
+          <img src="{{ url_for('static', filename='uploads/' + complaint.image_filename) }}"
+               alt="Complaint photo" class="complaint-image">
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Admin notes timeline -->
+      <div class="card">
+        <div class="card-header"><i class="bi bi-chat-text me-2"></i>Activity Log</div>
+        <div class="card-body p-4">
+          {% if complaint.admin_notes %}
+          <div class="note-timeline">
+            {% for note in complaint.admin_notes %}
+            <div class="note-item">
+              <p class="mb-1">{{ note.note }}</p>
+              <div class="note-time">{{ note.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted small mb-0">No notes yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: update panel -->
+    <div class="col-lg-4">
+      <div class="card sticky-top" style="top:1rem;">
+        <div class="card-header"><i class="bi bi-pencil me-2"></i>Update Complaint</div>
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('admin.update_complaint', complaint_id=complaint.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Status</label>
+              <select name="status" class="form-select">
+                {% for s in statuses %}
+                <option value="{{ s }}" {{ 'selected' if complaint.status == s }}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Add Note</label>
+              <textarea name="note" class="form-control" rows="4"
+                        placeholder="Add an update or comment..."></textarea>
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>Save Update
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

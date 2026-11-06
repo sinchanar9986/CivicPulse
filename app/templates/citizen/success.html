@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Complaint Submitted – CivicPulse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7 text-center">
+
+      <div class="success-icon mb-3">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h2 class="fw-bold mb-2">Complaint Submitted!</h2>
+      <p class="text-muted mb-4">Thank you for reporting. Your complaint has been recorded and assigned a reference number.</p>
+
+      <div class="complaint-id-box mb-4">
+        #{{ complaint.id }}
+      </div>
+
+      <!-- AI analysis results -->
+      <div class="card text-start mb-4">
+        <div class="card-header"><i class="bi bi-stars me-2"></i>AI Analysis</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-4">
+              <div class="fw-semibold text-muted small mb-1">CATEGORY</div>
+              <span class="badge-category">{{ complaint.category }}</span>
+            </div>
+            <div class="col-sm-4">
+              <div class="fw-semibold text-muted small mb-1">PRIORITY</div>
+              <span class="badge rounded-pill badge-priority-{{ complaint.priority | lower }}">
+                {{ complaint.priority }}
+              </span>
+            </div>
+            <div class="col-sm-4">
+              <div class="fw-semibold text-muted small mb-1">STATUS</div>
+              <span class="badge rounded-pill badge-status-pending">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if complaint.is_duplicate %}
+      <div class="alert alert-warning text-start">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Possible Duplicate:</strong> A similar complaint (#{{ complaint.duplicate_of_id }}) already exists in our system
+        (similarity: {{ "%.0f"|format(complaint.similarity_score * 100) }}%).
+        Your complaint has been saved and will be reviewed alongside the original.
+      </div>
+      {% endif %}
+
+      <div class="d-flex justify-content-center gap-3 mt-3">
+        <a href="{{ url_for('citizen.index') }}" class="btn btn-primary">
+          <i class="bi bi-plus-circle me-1"></i>Submit Another
+        </a>
+        <a href="{{ url_for('citizen.track') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-search me-1"></i>Track This Complaint
+        </a>
+      </div>
+
+      <p class="text-muted small mt-4">
+        <i class="bi bi-info-circle me-1"></i>
+        Save your reference number <strong>#{{ complaint.id }}</strong> to track your complaint status later.
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

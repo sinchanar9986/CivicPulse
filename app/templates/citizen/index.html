@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Submit a Complaint – CivicPulse{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="hero-section">
+  <div class="container">
+    <h1><i class="bi bi-megaphone me-2"></i>Report a Civic Issue</h1>
+    <p>Submit your complaint and our AI will automatically classify, detect duplicates and assign priority.</p>
+    <a href="{{ url_for('citizen.track') }}" class="btn btn-outline-light btn-sm">
+      <i class="bi bi-search me-1"></i>Track existing complaint
+    </a>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <i class="bi bi-pencil-square me-2"></i>Complaint Details
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('citizen.submit') }}" enctype="multipart/form-data" id="complaint-form" novalidate>
+            {{ form.hidden_tag() }}
+
+            <!-- Title -->
+            <div class="mb-3">
+              <label for="title" class="form-label fw-semibold">Complaint Title <span class="text-danger">*</span></label>
+              {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""),
+                            id="title", placeholder="e.g. Large pothole on MG Road") }}
+              {% for e in form.title.errors %}
+                <div class="invalid-feedback">{{ e }}</div>
+              {% endfor %}
+              <div class="form-text">5–200 characters.</div>
+            </div>
+
+            <!-- Category -->
+            <div class="mb-3">
+              <label for="category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+              {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else ""), id="category") }}
+              {% for e in form.category.errors %}
+                <div class="invalid-feedback">{{ e }}</div>
+              {% endfor %}
+              <div class="form-text">
+                <i class="bi bi-stars me-1"></i>
+                AI will auto-suggest a category — you can override it here.
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="description" class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+              {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""),
+                                   id="description", rows=4,
+                                   placeholder="Describe the issue in detail...") }}
+              {% for e in form.description.errors %}
+                <div class="invalid-feedback">{{ e }}</div>
+              {% endfor %}
+              <div class="form-text">20–2000 characters.</div>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Location <span class="text-danger">*</span></label>
+              <div class="form-text mb-2">
+                <i class="bi bi-map me-1"></i>
+                Click on the map to pin your location, or type the address below.
+              </div>
+
+              <!-- Leaflet picker map -->
+              <div id="picker-map"></div>
+              <div class="map-fallback" id="map-fallback-citizen">
+                Map unavailable. Please type your location below.
+              </div>
+
+              {{ form.location_text(class="form-control mt-2" + (" is-invalid" if form.location_text.errors else ""),
+                                    id="location_text",
+                                    placeholder="e.g. Near bus stop, Indiranagar, Bengaluru") }}
+              {% for e in form.location_text.errors %}
+                <div class="invalid-feedback">{{ e }}</div>
+              {% endfor %}
+
+              <!-- Hidden lat/lng -->
+              {{ form.latitude(id="latitude") }}
+              {{ form.longitude(id="longitude") }}
+            </div>
+
+            <!-- Image upload -->
+            <div class="mb-4">
+              <label for="image" class="form-label fw-semibold">Photo (optional)</label>
+              {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""),
+                            id="image", accept=".jpg,.jpeg,.png,.gif") }}
+              {% for e in form.image.errors %}
+                <div class="invalid-feedback">{{ e }}</div>
+              {% endfor %}
+              <div class="form-text">JPG, PNG or GIF, max 5 MB.</div>
+              <div id="image-error" class="text-danger small mt-1" style="display:none;"></div>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                <i class="bi bi-send me-2"></i>Submit Complaint
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+  initPickerMap('picker-map', 'latitude', 'longitude', 'location_text',
+    {{ config.MAP_DEFAULT_LAT }}, {{ config.MAP_DEFAULT_LNG }});
+
+  // Client-side file validation
+  document.getElementById('image').addEventListener('change', function() {
+    const file = this.files[0];
+    const errEl = document.getElementById('image-error');
+    errEl.style.display = 'none';
+    if (!file) return;
+    const allowed = ['image/jpeg','image/png','image/gif'];
+    if (!allowed.includes(file.type)) {
+      errEl.textContent = 'Only JPG, PNG or GIF files are allowed.';
+      errEl.style.display = 'block';
+      this.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      errEl.textContent = 'File must be smaller than 5 MB.';
+      errEl.style.display = 'block';
+      this.value = '';
+    }
+  });
+</script>
+{% endblock %}

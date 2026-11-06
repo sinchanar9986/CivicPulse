@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Track Complaint – CivicPulse{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1><i class="bi bi-search me-2"></i>Track Your Complaint</h1>
+    <p>Enter your complaint reference number to see the current status.</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <!-- Search form -->
+      <div class="card mb-4">
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('citizen.track') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-hash"></i></span>
+              <input type="number" name="complaint_id" class="form-control form-control-lg"
+                     placeholder="Enter complaint ID (e.g. 5)"
+                     min="1" required
+                     value="{{ searched_id or '' }}">
+              <button class="btn btn-primary" type="submit">
+                <i class="bi bi-search me-1"></i>Track
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Results -->
+      {% if searched and not complaint %}
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          No complaint found with ID <strong>#{{ searched_id }}</strong>.
+          Please check the number and try again.
+        </div>
+      {% endif %}
+
+      {% if complaint %}
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-file-text me-2"></i>Complaint #{{ complaint.id }}</span>
+          {% set sc = complaint.status | lower | replace(' ', '') %}
+          <span class="badge rounded-pill badge-status-{{ sc }}">{{ complaint.status }}</span>
+        </div>
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-1">{{ complaint.title }}</h5>
+          <div class="mb-3">
+            <span class="badge-category me-2">{{ complaint.category }}</span>
+            {% set pc = complaint.priority | lower %}
+            <span class="badge rounded-pill badge-priority-{{ pc }}">{{ complaint.priority }} Priority</span>
+          </div>
+          <p class="text-muted">{{ complaint.description }}</p>
+
+          <hr>
+          <div class="row g-2 small">
+            <div class="col-sm-6">
+              <i class="bi bi-geo-alt text-primary me-1"></i>
+              <strong>Location:</strong> {{ complaint.location_text }}
+            </div>
+            <div class="col-sm-6">
+              <i class="bi bi-calendar text-primary me-1"></i>
+              <strong>Submitted:</strong> {{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+            <div class="col-sm-6">
+              <i class="bi bi-clock-history text-primary me-1"></i>
+              <strong>Last Updated:</strong> {{ complaint.updated_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+          </div>
+
+          {% if complaint.admin_notes %}
+          <hr>
+          <h6 class="fw-semibold mb-3"><i class="bi bi-chat-text me-2"></i>Updates from Admin</h6>
+          <div class="note-timeline">
+            {% for note in complaint.admin_notes %}
+            <div class="note-item">
+              <p class="mb-1">{{ note.note }}</p>
+              <div class="note-time">{{ note.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if complaint.is_duplicate %}
+          <div class="alert alert-warning mt-3 mb-0 small">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            This complaint was flagged as similar to complaint #{{ complaint.duplicate_of_id }}.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
